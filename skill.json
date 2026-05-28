@@ -1,0 +1,19 @@
+{
+  "name": "podcast-workflow",
+  "displayName": "Podcast Workflow - AI播客制作工作流",
+  "description": "一键生成可发布的播客音频：选题搜索 → 文稿撰写 → 合规审查 → 人工确认 → TTS语音合成。支持MiMo内置音色和声音克隆两种模式，自动匹配情绪节奏。",
+  "version": "1.0.0",
+  "author": "user",
+  "keywords": [
+    "podcast",
+    "播客",
+    "tts",
+    "语音合成",
+    "mimo",
+    "声音克隆",
+    "做播客",
+    "音频生成",
+    "podcast workflow"
+  ],
+  "platforms": ["claude"]
+}
