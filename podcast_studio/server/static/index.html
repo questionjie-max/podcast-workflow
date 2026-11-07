@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>播客工坊 · Podcast Studio</title>
+<link rel="stylesheet" href="/static/style.css?v=__PS_VERSION__">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>">
+<link rel="manifest" href="/static/manifest.json">
+<script>try{var t=localStorage.getItem("ps-theme");if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
+<meta name="theme-color" content="#e8734a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="播客工坊">
+</head>
+<body>
+<header>
+  <div class="logo" onclick="showView('new')" title="回到首页">🎙️ 播客工坊 <span class="sub">Podcast Studio</span></div>
+  <nav>
+    <button id="nav-new" class="nav-btn active" onclick="showView('new')" data-i18n="nav.new">➕ 新建节目</button>
+    <button id="nav-library" class="nav-btn" onclick="openLibrary()" data-i18n="nav.library">📻 我的电台</button>
+    <button id="nav-settings" class="nav-btn" onclick="openSettings()" data-i18n="nav.settings">⚙️ 设置</button>
+    <button id="lang-toggle" class="nav-btn" onclick="toggleLang()">EN</button>
+    <button id="theme-toggle" class="nav-btn" onclick="toggleTheme()" title="深色/浅色">🌙</button>
+  </nav>
+</header>
+
+<main>
+  <!-- 首次运行向导 -->
+  <div id="wizard" hidden>
+    <div class="card" id="wizard-card">
+      <div class="hint small" id="wizard-step-ind">第 1 / 3 步</div>
+      <div id="wizard-body"></div>
+      <div class="actions">
+        <button class="cta" id="wizard-next" onclick="wizardNext()" data-i18n="wizard.next">下一步 →</button>
+        <button class="ghost-btn" onclick="wizardSkip()" data-i18n="wizard.skip">跳过,直接开始用</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新建节目 -->
+  <section id="view-new" class="view">
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" data-mode="topic" onclick="setMode('topic')" data-i18n="tab.topic">🔍 给个选题</button>
+        <button class="tab" data-mode="material" onclick="setMode('material')" data-i18n="tab.material">📄 我有素材</button>
+      </div>
+      <p class="hint" id="mode-hint" data-i18n="hint.topic">输入一个主题范围或问题，我会帮你搜罗选题</p>
+      <textarea id="input-text" rows="2" data-i18n-ph="input.topic.ph" placeholder="例如：为什么会下雨？&#10;例如：上海房产 / AI 趋势 / 今天幼儿园学的恐龙知识"></textarea>
+      <div class="actions" style="margin-top:8px">
+        <button class="ghost-btn" id="voice-input-btn" onclick="voiceInput()">🎙️ 说一句</button>
+        <span id="vi-status" class="hint small"></span>
+      </div>
+      <!-- P1-3:六段平铺收成三组折叠,默认只展开第一组;默认值可直接「开始制作」 -->
+      <details class="wizard-group" open>
+        <summary data-i18n="group.what">① 做什么（节目类型 · 形式）</summary>
+        <div class="field-row">
+          <label data-i18n="label.style">节目类型</label>
+          <div class="style-cards" id="style-cards"></div>
+        </div>
+        <div class="field-row">
+          <label data-i18n="label.format">形式</label>
+          <div class="style-cards">
+            <div class="style-card selected" data-format="solo" onclick="setFormat('solo')">
+              <div class="t" data-i18n="format.solo.t">🎤 单人朗读</div><div class="d" data-i18n="format.solo.d">一个声音讲到底</div>
+            </div>
+            <div class="style-card" data-format="dual" onclick="setFormat('dual')">
+              <div class="t" data-i18n="format.dual.t">👥 双人对谈</div><div class="d" data-i18n="format.dual.d">改写成 A/B 对话,两个声音轮替</div>
+            </div>
+          </div>
+        </div>
+      </details>
+      <details class="wizard-group">
+        <summary data-i18n="group.how">② 怎么说（基调 · 结构）</summary>
+        <div class="field-row" id="mood-row">
+          <label data-i18n="label.mood">整期基调(自动弹出对应选项)</label>
+          <div class="style-cards" id="mood-cards"></div>
+        </div>
+        <div class="field-row" id="structure-row">
+          <label for="structure-select" data-i18n="label.structure">🧭 结构模板(决定节目怎么铺陈)</label>
+          <select id="structure-select"><option value="">自动(情绪导演规划)</option></select>
+        </div>
+      </details>
+      <details class="wizard-group">
+        <summary data-i18n="group.who">③ 谁来读（声音 · 时长 · 语速）</summary>
+        <div class="field-row two-col">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+              <label for="voice-select" data-i18n="label.voice" style="margin:0">声音</label>
+              <button class="ghost-btn" style="padding:2px 8px;font-size:12px" onclick="previewVoice()">🔊 试听</button>
+            </div>
+            <select id="voice-select"></select>
+            <p class="hint small"><a href="#" onclick="openSettings();return false" data-i18n="voice.clone.hint">想要自己的声音？去设置里录制克隆 →</a></p>
+            <p class="hint small"><a href="#" onclick="openVoiceWall();return false" data-i18n="voice.wall.link">🎧 想先听听各种声音？打开音色墙 →</a></p>
+          </div>
+          <div>
+            <label for="minutes-select" data-i18n="label.minutes">⏱ 时长</label>
+            <select id="minutes-select"></select>
+            <label for="pace-select" style="margin-top:8px" data-i18n="label.pace">🗣 语速</label>
+            <select id="pace-select">
+              <option value="慢" data-i18n="pace.slow">慢</option>
+              <option value="标准" selected data-i18n="pace.std">标准</option>
+              <option value="快" data-i18n="pace.fast">快</option>
+            </select>
+          </div>
+        </div>
+      </details>
+      <button class="cta" id="btn-create" onclick="createEpisode()" data-i18n="btn.create">✨ 开始制作</button>
+      <p id="create-error" class="error-msg" hidden></p>
+      <p class="hint small" style="text-align:center;margin-top:10px"><a href="#" onclick="showDemoShelf();return false" data-i18n="demo.listen">🎧 先听听示例电台</a></p>
+    </div>
+  </section>
+
+  <!-- 节目详情 -->
+  <section id="view-episode" class="view" hidden>
+    <div class="card">
+      <div class="ep-head">
+        <button class="ghost-btn" onclick="showView('new')" data-i18n="btn.back">← 返回</button>
+        <h2 id="ep-title">…</h2>
+      </div>
+      <div class="steps" id="ep-steps"></div>
+      <div id="ep-body"></div>
+    </div>
+  </section>
+
+  <!-- 我的电台 -->
+  <section id="view-library" class="view" hidden>
+    <div class="card">
+      <h2 data-i18n="library.title">📻 我的电台</h2>
+      <input id="library-search" placeholder="按标题搜索…" data-i18n-ph="library.search.ph" oninput="renderLibraryList()" style="margin-bottom:10px">
+      <div id="library-list"></div>
+      <p class="hint small" style="margin-top:14px"><span data-i18n="library.rss">📡 订阅到播客客户端:RSS </span><a href="/api/feed.rss" target="_blank"><code>/api/feed.rss</code></a><span data-i18n="library.rss.note">(公网订阅需配合内网穿透)</span></p>
+    </div>
+  </section>
+
+  <!-- 设置 -->
+  <section id="view-settings" class="view" hidden>
+    <div class="card" style="border-color:var(--accent)">
+      <h2 data-i18n="settings.keymatch.title">🔑 粘贴 API Key,一键连接</h2>
+      <p class="hint" data-i18n="settings.keymatch.hint">DeepSeek / Kimi / 通义 / 混元 / OpenAI / 火山方舟(豆包)……不管哪家的,把 Key 原样粘进来就行。产品自动认出是哪家、接上、测通,告诉你「可以生产了」。</p>
+      <div class="field-row">
+        <input id="paste-key" type="password" placeholder="把 API Key 粘贴到这里…" data-i18n-ph="settings.keymatch.ph">
+      </div>
+      <button class="cta" onclick="matchKey()" data-i18n="btn.matchKey">🚀 一键连接</button>
+      <div id="keymatch-report" hidden style="margin-top:12px"></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="settings.voice.title">🗣️ 我的声音（克隆）</h2>
+      <p class="hint" data-i18n="settings.voice.hint">安静环境录 30–60 秒：正常语速聊天即可，覆盖各种发音。克隆声音依赖 MiMo TTS（需配置 API Key）。</p>
+
+      <details style="margin:10px 0"><summary class="hint" style="cursor:pointer" data-i18n="rec.script">📄 没想好说什么?点开用这段录音稿(已覆盖各类发音)</summary>
+        <div class="state-msg" id="rec-script-box" style="font-size:13px;line-height:1.9">大家好，我是<b>__</b>，我正在录制声音样本。四十只石狮子，红鲤鱼与绿鲤鱼与驴。三月，山与水，春雨绵绵。他提出了一个新设想，我们努力去实现。小丽去上海出差，顺手买了六斤绿豆。关注空气、河流与森林，从自己做起。今天天气真不错，我们出去散散步，看看云，听听风。</div>
+        <button class="ghost-btn" onclick="copyRecScript()">📋 复制录音稿</button>
+      </details>
+
+      <div class="field-row">
+        <label data-i18n="record.method1">方式一：浏览器直接录音（推荐）</label>
+        <div class="actions" style="margin-top:4px">
+          <button class="ghost-btn" id="rec-btn" onclick="toggleRecord()">🎤 开始录音</button>
+          <span id="rec-status" class="hint"></span>
+        </div>
+        <audio id="rec-preview" controls style="display:none;margin-top:10px"></audio>
+      </div>
+      <div class="field-row">
+        <label data-i18n="record.method2">方式二：上传现成录音文件（wav / m4a / mp3 / webm）</label>
+        <div class="field-row two-col">
+          <div><label for="clone-name" data-i18n="voice.name">声音名称</label><input id="clone-name" placeholder="如：爸爸的声音" data-i18n-ph="voice.name.ph"></div>
+          <div><label for="clone-file" data-i18n="voice.file">录音文件</label><input id="clone-file" type="file" accept=".wav,.m4a,.mp3,.aac,.flac,.webm,.ogg"></div>
+        </div>
+        <button class="cta" onclick="uploadClone()" data-i18n="btn.upload">📤 上传并入库</button>
+      </div>
+      <div id="clone-list"></div>
+    </div>
+
+    <div class="card" id="voice-wall-card">
+      <details id="voice-wall-fold">
+        <summary data-i18n="voices.wall.title">🎧 音色墙</summary>
+        <p class="hint" data-i18n="voices.wall.hint">一页看遍所有可选声音。🆓 免费音色点「试听」立刻出声；🔑 音色需在上方配置对应 Key；克隆声音做一期节目即可听到。</p>
+        <div id="voice-wall" class="voice-wall"></div>
+        <button class="ghost-btn" id="voice-wall-expand" onclick="expandVoiceWall()" hidden data-i18n="voices.wall.expand">展开全部 edge 音色</button>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="pricing.title">📊 用量与费用估算（可选）</h2>
+      <p class="hint" data-i18n="pricing.hint">每期节目都会记录写作与语音的字数。填入你所用服务的单价后可估算每期成本；全部留 0 则只显示字数，不估算金额。价格以各厂商控制台为准。</p>
+      <div class="field-row two-col">
+        <div><label data-i18n="pricing.currency">币种</label><input id="price-currency" placeholder="CNY"></div>
+        <div><label data-i18n="pricing.in">输入 每百万 token</label><input id="price-llm-in" type="number" step="0.01" min="0" value="0"></div>
+        <div><label data-i18n="pricing.out">输出 每百万 token</label><input id="price-llm-out" type="number" step="0.01" min="0" value="0"></div>
+        <div><label data-i18n="pricing.tts">语音 每千字</label><input id="price-tts" type="number" step="0.001" min="0" value="0"></div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="ghost-btn" onclick="savePricing()" data-i18n="btn.save">💾 保存</button>
+        <span id="pricing-msg" class="hint" hidden></span>
+      </div>
+    </div>
+
+    <details class="adv" id="settings-advanced">
+      <summary data-i18n="settings.advanced.title">🔧 进阶设置（接口 / 搜索 / 定时 / TTS·ASR / 垫乐 / 系统 / 信任）</summary>
+      <p class="hint" data-i18n="settings.advanced.hint">上面的常用区已覆盖日常使用；需要细调接口、自动化或查看系统与信任信息时再展开。</p>
+
+    <div class="card">
+      <h2 data-i18n="settings.llm.title">⚙️ 高级设置</h2>
+      <details class="expert">
+        <summary data-i18n="settings.expert">🔧 专家模式（一般用不到）</summary>
+        <div class="field-row">
+          <div class="field-row two-col">
+            <div>
+              <label for="cfg-preset" data-i18n="settings.preset">⚡ 一键预设</label>
+              <select id="cfg-preset" onchange="applyPreset()"><option value="">选择厂商自动填充…</option></select>
+            </div>
+            <div>
+              <label for="cfg-gateway" data-i18n="settings.gateway">本地网关(CC Switch / Magpie)</label>
+              <div style="display:flex;gap:8px">
+                <select id="cfg-gateway" onchange="applyGateway()"><option value="">先点右边检测…</option></select>
+                <button class="ghost-btn" style="white-space:nowrap" onclick="detectGateways()" data-i18n="btn.detect">🔎 检测</button>
+              </div>
+            </div>
+          </div>
+          <label for="cfg-provider" data-i18n="settings.provider">写作引擎</label>
+          <select id="cfg-provider" onchange="onProviderChange()">
+            <option value="mock" data-i18n="provider.mock">演示模式（无需 API key，内置示例文稿，合成仍是真实语音）</option>
+            <option value="openai" data-i18n="provider.openai">OpenAI 兼容接口（MiMo / DeepSeek / Qwen / Kimi…）</option>
+          </select>
+        </div>
+        <div id="cfg-openai-fields">
+          <div class="field-row two-col">
+            <div><label for="cfg-base-url" data-i18n="settings.baseurl">接口地址 base_url</label><input id="cfg-base-url" placeholder="https://token-plan-cn.xiaomimimo.com/v1"></div>
+            <div><label for="cfg-model" data-i18n="settings.model">模型</label><input id="cfg-model" placeholder="mimo-v2.5-pro"></div>
+          </div>
+          <div class="field-row two-col">
+            <div><label for="cfg-api-key" data-i18n="settings.apikey">API Key</label><input id="cfg-api-key" type="password" placeholder="sk-…（已保存的显示为 ****）"></div>
+            <div>
+              <label for="cfg-auth-style" data-i18n="settings.auth">认证方式</label>
+              <select id="cfg-auth-style">
+                <option value="api-key">api-key 头（MiMo）</option>
+                <option value="bearer">Authorization: Bearer</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <label class="checkbox"><input type="checkbox" id="cfg-ssl-verify"> <span data-i18n="settings.ssl">校验 SSL 证书（若 MiMo 报证书错误，先尝试更新系统/certifi 证书；关闭仅作最后手段）</span></label>
+          </div>
+        </div>
+      </details>
+      <button class="cta" onclick="saveConfig()" data-i18n="btn.save">💾 保存配置</button>
+      <p id="cfg-msg" class="hint" hidden></p>
+      <div class="field-row" id="cfg-test-row" hidden>
+        <button class="ghost-btn" onclick="testLlm()" data-i18n="btn.test">🔌 测试连接</button>
+        <button class="cta" style="width:auto;margin:0;padding:8px 16px;background:var(--night)" onclick="autoConnect()" data-i18n="btn.autofix">🩹 一键修复连接</button>
+        <span id="cfg-test-result" class="hint"></span>
+      </div>
+      <div id="autoconnect-report" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="settings.search.title">🔍 搜索配置（可选，选题更贴热点）</h2>
+      <p class="hint" data-i18n="settings.search.desc">默认关闭(用模型知识)。配置后选题阶段会先搜索实时热点作为参考。给成人播客用价值最大,睡前故事可以不开。</p>
+      <div class="field-row two-col">
+        <div>
+          <label data-i18n="settings.search.hint">搜索源</label>
+          <select id="search-provider">
+            <option value="off" data-i18n="search.off">关闭(用模型知识)</option>
+            <option value="tavily" data-i18n="search.tavily">Tavily(国际)</option>
+            <option value="bocha" data-i18n="search.bocha">博查(国内)</option>
+          </select>
+        </div>
+        <div><label data-i18n="search.key">API Key</label><input id="search-key" type="password" placeholder="对应搜索源的 Key（已存显示 ****）" data-i18n-ph="search.key.ph"></div>
+      </div>
+      <button class="cta" onclick="saveSearchConfig()" data-i18n="btn.saveSearch">💾 保存搜索配置</button>
+      <p id="search-msg" class="hint" hidden></p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="settings.schedule.title">⏰ 每晚定时生成（睡前故事场景）</h2>
+      <p class="hint" data-i18n="settings.schedule.hint">到点自动做一期：话题池轮换、自动选第一个选题、合成用指定声音。电脑需开机且服务在跑。</p>
+      <div class="field-row two-col">
+        <div>
+          <label class="checkbox"><input type="checkbox" id="sched-enabled"> <span data-i18n="schedule.enable">启用定时生成</span></label>
+          <label style="margin-top:8px" for="sched-time" data-i18n="schedule.time">每天几点</label>
+          <input id="sched-time" type="time" value="20:30">
+        </div>
+        <div>
+          <label data-i18n="schedule.style">节目类型 / 时长 / 声音</label>
+          <div class="grid-3">
+            <select id="sched-style"></select>
+            <select id="sched-minutes"><option>3</option><option selected>5</option><option>8</option><option>10</option></select>
+            <select id="sched-voice"></select>
+          </div>
+        </div>
+      </div>
+      <div class="field-row">
+        <label for="sched-topics" data-i18n="schedule.topics">话题池（一行一个，每晚轮换；留空且不填素材则不触发）</label>
+        <textarea id="sched-topics" rows="4" placeholder="为什么会下雨？&#10;月亮为什么有时候圆有时候弯？&#10;彩虹是怎么出现的？" data-i18n-ph="schedule.topics.ph"></textarea>
+      </div>
+      <button class="cta" onclick="saveSchedule()" data-i18n="btn.saveSchedule">💾 保存定时设置</button>
+      <p id="sched-msg" class="hint" hidden></p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="settings.tts.title">🔊 TTS 接口配置（可选）</h2>
+      <p class="hint" data-i18n="settings.tts.hint">选了带 🔑 标记的声音才需要配。MiMo 的 Key 复用上方「写作引擎」的 API Key。</p>
+      <div class="field-row two-col">
+        <div>
+          <label data-i18n="tts.volc">豆包 TTS（分段合成·HTTP）：app_id / access token / cluster</label>
+          <div class="grid-3">
+            <input id="tts-volc-appid" placeholder="app_id">
+            <input id="tts-volc-token" type="password" placeholder="access token（已存显示 ****）">
+            <input id="tts-volc-cluster" placeholder="volcano_tts">
+          </div>
+        </div>
+        <div>
+          <label data-i18n="tts.ali">阿里 CosyVoice：DashScope Key / 模型</label>
+          <div class="grid-2">
+            <input id="tts-ali-key" type="password" placeholder="sk-…（已存显示 ****）">
+            <input id="tts-ali-model" placeholder="cosyvoice-v2">
+          </div>
+        </div>
+      </div>
+      <details class="expert">
+        <summary data-i18n="tts.vp.summary">🎙️ 方舟播客（双人对话整期·进阶配置）</summary>
+        <div class="field-row">
+          <label data-i18n="tts.vp">🎙️ 方舟播客（双人对话整期·WebSocket v3）：X-Api-Key / 资源 ID</label>
+          <div class="grid-2">
+            <input id="tts-vp-key" type="password" placeholder="控制台的 API Key（已存显示 ****）">
+            <input id="tts-vp-resource" placeholder="volc.service_type.10050">
+          </div>
+        </div>
+      </details>
+      <div class="field-row two-col">
+        <div><label data-i18n="tts.el">ElevenLabs：API Key（xi-api-key）/ 模型</label>
+          <div class="grid-2">
+            <input id="tts-el-key" type="password" placeholder="el-…（已存显示 ****）">
+            <input id="tts-el-model" placeholder="eleven_multilingual_v2">
+          </div>
+        </div>
+      </div>
+      <div class="field-row two-col">
+        <div><label data-i18n="tts.az">Azure Speech：Subscription Key / Region</label>
+          <div class="grid-2">
+            <input id="tts-az-key" type="password" placeholder="subscription key（已存显示 ****）">
+            <input id="tts-az-region" placeholder="eastasia">
+          </div>
+        </div>
+        <div></div>
+      </div>
+      <div class="field-row two-col">
+        <div><label data-i18n="tts.asr">🎙️ 语音识别(豆包 ASR,语音输入选题用):app_id / token</label>
+          <div class="grid-2">
+            <input id="tts-asr-appid" placeholder="app_id(与 TTS 可同账号)">
+            <input id="tts-asr-token" type="password" placeholder="access token（已存显示 ****）">
+          </div>
+        </div>
+        <div></div>
+      </div>
+      <button class="cta" onclick="saveTtsConfig()" data-i18n="btn.saveTts">💾 保存 TTS 配置</button>
+      <p id="tts-msg" class="hint" hidden></p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="bgm.title">🎵 垫乐（可选，睡前故事更温柔）</h2>
+      <p class="hint" data-i18n="bgm.hint">填一个本地音乐文件的路径（mp3/m4a/flac 均可，版权请自担）。合成时会自动循环铺底、首尾淡入淡出，音量默认很低不抢人声。留空则不混垫乐。</p>
+      <div class="field-row two-col">
+        <div style="grid-column:1 / -1"><label data-i18n="bgm.path">音乐文件路径</label><input id="bgm-path" placeholder="/home/me/Music/lullaby.mp3"></div>
+        <div><label data-i18n="bgm.vol">垫乐音量（0-0.5）</label><input id="bgm-vol" type="number" step="0.01" min="0" max="0.5" value="0.12"></div>
+      </div>
+      <div class="actions" style="margin-top:10px">
+        <button class="ghost-btn" onclick="saveBgmConfig()" data-i18n="btn.save">💾 保存</button>
+        <span id="bgm-msg" class="hint" hidden></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="sys.title">🖥️ 系统信息</h2>
+      <div id="sys-info" class="hint">加载中…</div>
+    </div>
+
+    <div class="card trust">
+      <h2 data-i18n="trust.title">🛡️ 关于与信任</h2>
+      <p class="trust-statement" data-i18n="trust.statement">装在你自己电脑上的播客与睡前故事工作室——用你的声音讲，每一集都由家长审定，数据不出门。</p>
+      <h3 data-i18n="trust.data.title">你的数据</h3>
+      <p class="hint" data-i18n="trust.data.body">所有数据都存在本机 ~/.podcast-studio：config.json 权限 0600，数据目录 0700，并自动备份 config.json.bak。除了你调用的 AI 服务（写稿/语音），内容不经过任何第三方。</p>
+      <h3 data-i18n="trust.kids.title">儿童内容安全</h3>
+      <p class="hint" data-i18n="trust.kids.body">儿童模式强制黑名单 + 敏感词过滤、事实核查（≤3 轮），搜不到可靠来源就丢弃选题——宁可少一集，不可错一集。</p>
+      <h3 data-i18n="trust.cost.title">免费与付费</h3>
+      <p class="hint" data-i18n="trust.cost.body">本软件永久免费开源（自托管）；你只需要为自己的 AI 服务 API 用量付费；免费路径（edge-tts + 演示模式）零成本可用。</p>
+    </div>
+    </details>
+  </section>
+</main>
+
+<footer>播客工坊 v<span id="ver">?</span> · 本地运行，数据不出你的电脑（TTS/LLM 调用除外）</footer>
+
+<script>window.__BUILD__ = "__PS_VERSION__";</script>
+<script src="/static/i18n.js?v=__PS_VERSION__"></script>
+<script src="/static/app.js?v=__PS_VERSION__"></script>
+</body>
+</html>

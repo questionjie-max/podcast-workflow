@@ -1,0 +1,30 @@
+services:
+  podcast-studio:
+    build:
+      context: .
+      args:
+        # 与宿主机用户对齐可避免 ./podcast-data 权限问题:
+        #   UID=$(id -u) GID=$(id -g) docker compose up -d
+        UID: ${UID:-10001}
+        GID: ${GID:-10001}
+    image: podcast-studio:local
+    container_name: podcast-studio
+    ports:
+      - "127.0.0.1:8686:8686"   # 默认只绑本机;要局域网访问改成 "8686:8686" 并配 allow_lan
+    volumes:
+      - ./podcast-data:/data   # 节目/声音/配置/备份都在这里,升级镜像不丢
+    environment:
+      - TZ=Asia/Shanghai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8686/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    # 合成/写稿是 CPU 与网络混合型;给个温和上限避免饿死宿主机
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2g

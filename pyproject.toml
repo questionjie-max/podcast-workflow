@@ -1,0 +1,77 @@
+[project]
+name = "podcast-studio"
+version = "0.5.3"
+description = "播客工坊 — 本地播客/故事电台工作室：选题 → 写稿 → 合规 → TTS 合成，支持 MiMo / edge-tts，声音克隆，Web UI"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "questionjie-max" }]
+keywords = ["podcast", "播客", "tts", "睡前故事", "voice-cloning", "edge-tts", "mimo",
+            "voice-synthesis", "bedtime-story", "audio-generation", "claude-code"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Multimedia :: Sound/Audio :: Capture/Recording",
+]
+
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "httpx>=0.27",
+    "edge-tts>=6.1",
+    "python-multipart>=0.0.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/questionjie-max/podcast-workflow"
+Issues = "https://github.com/questionjie-max/podcast-workflow/issues"
+Changelog = "https://github.com/questionjie-max/podcast-workflow/blob/main/CHANGELOG.md"
+
+[project.scripts]
+podcast-studio = "podcast_studio.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "respx>=0.21",   # mock httpx,用于未联调 TTS provider 的单测
+    "pytest-asyncio>=0.24",  # async provider 测试
+    "build>=1.2",    # 打包回归:构建 wheel 并断言数据文件齐全
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["podcast_studio*"]
+
+# wheel 必须带上运行时数据文件,否则 pip/Docker 安装后结构模板 500、示例电台消失。
+# 注意:server/static 需要递归(含 demo/<episode>/...),styles 下是纯数据 JSON。
+[tool.setuptools.package-data]
+podcast_studio = [
+    "server/static/*",
+    "server/static/demo/*/*",
+    "styles/*.json",
+]
+
+[tool.ruff.lint]
+# 面向产品务实的豁免:
+# RUF012 可变类属性(FastAPI/Provider 常量)、B008 FastAPI 依赖注入惯用法、
+# BLE001 引擎边界处有意捕获宽异常、S110 静默兜底(shownotes/封面等尽力而为项)、
+# PLW1510 ffmpeg/ffprobe 探测调用、TRY004 错误类型沿用运行时约定
+ignore = ["RUF012", "B008", "BLE001", "S110", "PLW1510", "TRY004"]
