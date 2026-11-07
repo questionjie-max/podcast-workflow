@@ -43,6 +43,7 @@ dev = [
     "respx>=0.21",   # mock httpx,用于未联调 TTS provider 的单测
     "pytest-asyncio>=0.24",  # async provider 测试
     "build>=1.2",    # 打包回归:构建 wheel 并断言数据文件齐全
+    'tomli>=2; python_version < "3.11"',  # tests/test_packaging.py 的 tomllib 兜底
 ]
 
 [tool.pytest.ini_options]

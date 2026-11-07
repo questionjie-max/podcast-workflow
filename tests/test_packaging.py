@@ -6,7 +6,10 @@
 
 from pathlib import Path
 
-import tomllib
+try:  # Python 3.11+;CI 矩阵含 3.10
+    import tomllib
+except ModuleNotFoundError:  # pragma: no cover
+    import tomli as tomllib
 
 ROOT = Path(__file__).resolve().parent.parent
 
