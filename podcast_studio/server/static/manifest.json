@@ -1,0 +1,15 @@
+{
+  "name": "播客工坊 Podcast Studio",
+  "short_name": "播客工坊",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf7f2",
+  "theme_color": "#e8734a",
+  "icons": [
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

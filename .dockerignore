@@ -1,0 +1,23 @@
+# 构建上下文瘦身:镜像里只需要源码与元数据
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.egg-info
+build
+dist
+.pytest_cache
+.ruff_cache
+docs
+tests
+data
+podcast-data
+*.md
+!README.md
+!MANIFEST.in
+run.sh
+start.sh
+install.sh
+scripts
+.zcode
